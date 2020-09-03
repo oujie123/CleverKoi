@@ -11,7 +11,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ImageView imageView = findViewById(R.id.clever_koi);
-        imageView.setImageDrawable(new CleverFish());
+//        ImageView imageView = findViewById(R.id.clever_koi);
+//        imageView.setImageDrawable(new CleverFish());
     }
 }
