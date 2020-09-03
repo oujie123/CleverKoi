@@ -24,16 +24,18 @@ public class CleverFish extends Drawable {
     private Path mPath;
     private int OTHER_ALPHA = 110;
     private int BODY_ALPHA = 160;
+    private float frequence = 1;
 
     //重心
     private PointF middlePoint;
-    private int originMainAngle = 0;
+    private PointF headPoint;
+    private float originMainAngle = 90;
 
     /**
      * 鱼的长度值
      */
     //鱼头半径
-    private final float HEAD_RADIUS = 100;
+    public final float HEAD_RADIUS = 50;
     //鱼身长度
     private final float BODY_LENGTH = HEAD_RADIUS * 3.2f;
     //鱼鳍的长度
@@ -69,8 +71,8 @@ public class CleverFish extends Drawable {
 
         //设置属性动画  0 -360的是一个周期，设置360的倍数,利用sin实现周期变化
         ValueAnimator valueAnimator = ValueAnimator.ofFloat(0, 720f);
-        valueAnimator.setDuration(8000);
-        valueAnimator.setRepeatMode(ValueAnimator.RESTART);
+        valueAnimator.setDuration(3 * 1000);
+        valueAnimator.setRepeatMode(ValueAnimator.REVERSE);
         //重复的次数
         valueAnimator.setRepeatCount(ValueAnimator.INFINITE);
         //设置插值器，线性插值器
@@ -88,9 +90,9 @@ public class CleverFish extends Drawable {
     @Override
     public void draw(Canvas canvas) {
 
-        float headAngle = (float) (originMainAngle + Math.sin(Math.toRadians(currentValue)) * 10);
+        float headAngle = (float) (originMainAngle + Math.sin(Math.toRadians(currentValue * 1.2 * frequence)) * 10);
         //鱼头圆心坐标
-        PointF headPoint = calculatePoint(middlePoint, BODY_LENGTH / 2, headAngle);
+        headPoint = calculatePoint(middlePoint, BODY_LENGTH / 2, headAngle);
         canvas.drawCircle(headPoint.x, headPoint.y, HEAD_RADIUS, mPaint);
 
         //右鱼鳍起点
@@ -108,7 +110,7 @@ public class CleverFish extends Drawable {
         drawSegment(canvas, triangleTop, MID_CIRCLE_RADIUS, SMALL_CIRCLE_RADIUS, FIND_SMALL_CIRCLE_LENGTH, headAngle, false);
 
         //此处sin cos一样的
-        float findEdgeLength = (float) (Math.cos(Math.toRadians(currentValue * 1.5)) * BIG_CIRCLE_RADIUS);
+        float findEdgeLength = (float) (Math.cos(Math.toRadians(currentValue * 1.5 * frequence)) * BIG_CIRCLE_RADIUS);
         //画三角形
         drawTriangle(canvas, triangleTop, findEdgeLength, FIND_TRIANGLE_LENGTH, headAngle - 180);
         drawTriangle(canvas, triangleTop, findEdgeLength - 20, FIND_TRIANGLE_LENGTH - 10, headAngle - 180);
@@ -137,7 +139,7 @@ public class CleverFish extends Drawable {
     }
 
     private void drawTriangle(Canvas canvas, PointF startPoint, float triangleRadius, float length, float headAngle) {
-        float segmentAngle = (float) (headAngle + Math.sin(Math.toRadians(currentValue * 1.5)) * 35);
+        float segmentAngle = (float) (headAngle + Math.sin(Math.toRadians(currentValue * 1.5 * frequence)) * 35);
         //三角形底边中心
         PointF triangleCenter = calculatePoint(startPoint, length, segmentAngle);
         PointF triangleRight = calculatePoint(triangleCenter, triangleRadius, segmentAngle - 90);
@@ -155,11 +157,11 @@ public class CleverFish extends Drawable {
         float segmentAngle;
         if (hasCircle) {
             //节肢1
-            //乘以1.5是改变频率
-            segmentAngle = (float) (headAngle + Math.cos(Math.toRadians(currentValue * 1.5)) * 15);
+            //乘以2是改变频率
+            segmentAngle = (float) (headAngle + Math.cos(Math.toRadians(currentValue * 1.5 * frequence)) * 15);
         } else {
             //节肢1
-            segmentAngle = (float) (headAngle + Math.sin(Math.toRadians(currentValue * 1.5)) * 35);
+            segmentAngle = (float) (headAngle + Math.sin(Math.toRadians(currentValue * 1.5 * frequence)) * 35);
         }
 
         PointF trapezoidUpperCenter = calculatePoint(trapezoidBottomCenter, findLength, segmentAngle - 180);
@@ -189,9 +191,13 @@ public class CleverFish extends Drawable {
         //贝塞尔曲线控制角度，可以自己试
         float controlAngle = 115;
         //减去180的原因是点在开始点左边
+        float changLength = (float) Math.sin(Math.toRadians(currentValue * 1.5 * frequence)) * 50f + RIGHT_FINS_LENGTH * 1.5f;
+
         PointF finsEndPoint = calculatePoint(finsStartPoint, RIGHT_FINS_LENGTH, headAngle - 180);
-        PointF controlPoint = calculatePoint(finsStartPoint, RIGHT_FINS_LENGTH * 1.8f,
+        PointF controlPoint = calculatePoint(finsStartPoint,changLength ,
                 isRight ? headAngle - controlAngle : headAngle + controlAngle);
+//        PointF controlPoint = calculatePoint(finsStartPoint, RIGHT_FINS_LENGTH * 1.8f,
+//                isRight ? headAngle - controlAngle : headAngle + controlAngle);
 
         //绘制鱼鳍
         mPath.reset();
@@ -201,7 +207,7 @@ public class CleverFish extends Drawable {
         canvas.drawPath(mPath, mPaint);
     }
 
-    private PointF calculatePoint(PointF startPoint, float length, float angle) {
+    public PointF calculatePoint(PointF startPoint, float length, float angle) {
         //X坐标计算
         float x = (float) Math.cos(Math.toRadians(angle)) * length;
         //Y坐标计算
@@ -235,5 +241,21 @@ public class CleverFish extends Drawable {
     @Override
     public int getIntrinsicHeight() {
         return (int) (2 * 4.19f * HEAD_RADIUS);
+    }
+
+    public PointF getMiddlePoint() {
+        return middlePoint;
+    }
+
+    public PointF getHeadPoint(){
+        return headPoint;
+    }
+
+    public void setFrequence(float frequence) {
+        this.frequence = frequence;
+    }
+
+    public void setOriginMainAngle(float originMainAngle) {
+        this.originMainAngle = originMainAngle;
     }
 }
