@@ -21,6 +21,7 @@ public class CleverFish extends Drawable {
     private Paint mPaint;
     private Path mPath;
     private int OTHER_ALPHA = 110;
+    private int BODY_ALPHA = 160;
 
     //重心
     private PointF middlePoint;
@@ -30,12 +31,20 @@ public class CleverFish extends Drawable {
      * 鱼的长度值
      */
     //鱼头半径
-    private float HEAD_RADIUS = 100;
+    private final float HEAD_RADIUS = 100;
     //鱼身长度
-    private float BODY_LENGTH = HEAD_RADIUS * 3.2f;
+    private final float BODY_LENGTH = HEAD_RADIUS * 3.2f;
     //鱼鳍的长度
-    private float RIGHT_FINS_LENGTH = HEAD_RADIUS * 1.3f;
-    private float FIND_FINS_POINT_LENGTH = HEAD_RADIUS * 0.9f;
+    private final float RIGHT_FINS_LENGTH = HEAD_RADIUS * 1.3f;
+    private final float FIND_FINS_POINT_LENGTH = HEAD_RADIUS * 0.9f;
+    //节肢圆半径
+    private final float BIG_CIRCLE_RADIUS = HEAD_RADIUS * 0.7f;
+    private final float MID_CIRCLE_RADIUS = BIG_CIRCLE_RADIUS * 0.6f;
+    private final float SMALL_CIRCLE_RADIUS = MID_CIRCLE_RADIUS * 0.4f;
+    //寻找圆心的线长
+    private final float FIND_MID_CIRCLE_LENGTH = BIG_CIRCLE_RADIUS * (1 + 0.6f);
+    private final float FIND_SMALL_CIRCLE_LENGTH = MID_CIRCLE_RADIUS * (0.4f + 2.7f);
+    private final float FIND_TRIANGLE_LENGTH = MID_CIRCLE_RADIUS * 2.7f;
 
     public CleverFish() {
         init();
@@ -69,6 +78,77 @@ public class CleverFish extends Drawable {
         //左鱼鳍起点
         PointF finsLeftStartPoint = calculatePoint(headPoint, FIND_FINS_POINT_LENGTH, headAngle + 110);
         drawRightFins(canvas, finsLeftStartPoint, headAngle, false);
+
+        //节肢1
+        PointF bodyBottomCenter = calculatePoint(headPoint, BODY_LENGTH, headAngle - 180);
+        drawSegment(canvas, bodyBottomCenter, BIG_CIRCLE_RADIUS, MID_CIRCLE_RADIUS, FIND_MID_CIRCLE_LENGTH, headAngle, true);
+
+        //节肢2
+        PointF bodyUpperCenter = calculatePoint(bodyBottomCenter, FIND_MID_CIRCLE_LENGTH, headAngle - 180);
+        drawSegment(canvas, bodyUpperCenter, MID_CIRCLE_RADIUS, SMALL_CIRCLE_RADIUS, FIND_SMALL_CIRCLE_LENGTH, headAngle, false);
+
+        //画三角形
+        drawTriangle(canvas, bodyUpperCenter, BIG_CIRCLE_RADIUS, FIND_TRIANGLE_LENGTH, headAngle);
+        drawTriangle(canvas, bodyUpperCenter, BIG_CIRCLE_RADIUS - 20, FIND_TRIANGLE_LENGTH - 10, headAngle);
+
+        //画身体
+        drawBody(canvas, headPoint, bodyBottomCenter, headAngle);
+    }
+
+    private void drawBody(Canvas canvas, PointF headPoint, PointF bodyBottomCenter, int headAngle) {
+        PointF headPointRight = calculatePoint(headPoint, HEAD_RADIUS, headAngle - 90);
+        PointF headPointLeft = calculatePoint(headPoint, HEAD_RADIUS, headAngle + 90);
+        PointF bodyBottomRight = calculatePoint(bodyBottomCenter, BIG_CIRCLE_RADIUS, headAngle - 90);
+        PointF bodyBottomLeft = calculatePoint(bodyBottomCenter, BIG_CIRCLE_RADIUS, headAngle + 90);
+
+        //计算控制点 决定鱼的胖瘦
+        PointF rightControlPoint = calculatePoint(headPoint, BODY_LENGTH * 0.56f, headAngle - 130);
+        PointF leftControlPoint = calculatePoint(headPoint, BODY_LENGTH * 0.56f, headAngle + 130);
+
+        mPath.reset();
+        mPath.moveTo(headPointRight.x, headPointRight.y);
+        mPath.quadTo(rightControlPoint.x, rightControlPoint.y, bodyBottomRight.x, bodyBottomRight.y);
+        mPath.lineTo(bodyBottomLeft.x, bodyBottomLeft.y);
+        mPath.quadTo(leftControlPoint.x, leftControlPoint.y, headPointLeft.x, headPointLeft.y);
+        mPaint.setAlpha(BODY_ALPHA);
+        canvas.drawPath(mPath, mPaint);
+    }
+
+    private void drawTriangle(Canvas canvas, PointF startPoint, float triangleRadius, float length, int headAngle) {
+        //三角形底边中心
+        PointF triangleCenter = calculatePoint(startPoint, length, headAngle - 180);
+        PointF triangleRight = calculatePoint(triangleCenter, triangleRadius, headAngle - 90);
+        PointF triangleLeft = calculatePoint(triangleCenter, triangleRadius, headAngle + 90);
+
+        //画三角形
+        mPath.reset();
+        mPath.moveTo(startPoint.x, startPoint.y);
+        mPath.lineTo(triangleRight.x, triangleRight.y);
+        mPath.lineTo(triangleLeft.x, triangleLeft.y);
+        canvas.drawPath(mPath, mPaint);
+    }
+
+    private void drawSegment(Canvas canvas, PointF trapezoidBottomCenter, float bigRadius, float smallRadius, float findLength, int headAngle, boolean hasCircle) {
+        PointF trapezoidUpperCenter = calculatePoint(trapezoidBottomCenter, findLength, headAngle - 180);
+        //梯形4个点
+        PointF trapezoidBottomRight = calculatePoint(trapezoidBottomCenter, bigRadius, headAngle - 90);
+        PointF trapezoidBottomLeft = calculatePoint(trapezoidBottomCenter, bigRadius, headAngle + 90);
+        PointF trapezoidUpperRight = calculatePoint(trapezoidUpperCenter, smallRadius, headAngle - 90);
+        PointF trapezoidUpperLeft = calculatePoint(trapezoidUpperCenter, smallRadius, headAngle + 90);
+
+        //画圆
+        if (hasCircle) {
+            canvas.drawCircle(trapezoidBottomCenter.x, trapezoidBottomCenter.y, bigRadius, mPaint);
+        }
+        canvas.drawCircle(trapezoidUpperCenter.x, trapezoidUpperCenter.y, smallRadius, mPaint);
+
+        //画梯形
+        mPath.reset();
+        mPath.moveTo(trapezoidBottomLeft.x, trapezoidBottomLeft.y);
+        mPath.lineTo(trapezoidBottomRight.x, trapezoidBottomRight.y);
+        mPath.lineTo(trapezoidUpperRight.x, trapezoidUpperRight.y);
+        mPath.lineTo(trapezoidUpperLeft.x, trapezoidUpperLeft.y);
+        canvas.drawPath(mPath, mPaint);
     }
 
     private void drawRightFins(Canvas canvas, PointF finsStartPoint, int headAngle, boolean isRight) {
